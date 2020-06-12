@@ -8,12 +8,17 @@ KERNEL_SRC :=  /lib/modules/$(KVERSION)
 MODULE_SRC := $(shell pwd)/modules
 SCRIPT_SRC := $(shell pwd)/scripts
 CONFIGS_SRC := $(shell pwd)/configs
+BUILD_DIR := $(shell pwd)/build
+WHEEL_BUILD_DIR := $(BUILD_DIR)/wheel
 
 %:
 	dh $@
 
 override_dh_auto_build:
 	make -C $(KERNEL_SRC)/build M=$(MODULE_SRC)
+	set -e
+	python2.7 setup.py bdist_wheel -d $(WHEEL_BUILD_DIR) 
+	set +e 
 
 override_dh_auto_install:
 	dh_installdirs -p$(PACKAGE_NAME) $(KERNEL_SRC)/$(INSTALL_MOD_DIR)
@@ -22,6 +27,8 @@ override_dh_auto_install:
 	cp -r $(SCRIPT_SRC)/* debian/$(PACKAGE_NAME)/usr/local/bin
 	dh_installdirs -p$(PACKAGE_NAME) etc/network/interfaces.d/
 	cp -r $(CONFIGS_SRC)/network/interfaces.d/* debian/$(PACKAGE_NAME)/etc/network/interfaces.d/
+	dh_installdirs -p$(PACKAGE_NAME) usr/share/sonic/platform/
+	cp -r $(WHEEL_BUILD_DIR)/*  debian/$(PACKAGE_NAME)/usr/share/sonic/platform/
 
 override_dh_usrlocal:
 
@@ -29,6 +36,9 @@ override_dh_pysupport:
 
 override_dh_clean:
 	dh_clean
+	rm -fr $(WHEEL_BUILD_DIR) 
+	rm -fr *.egg-info 
+	rm -fr $(BUILD)
 	rm -f $(MODULE_SRC)/*.o $(MODULE_SRC)/*.ko $(MODULE_SRC)/*.mod.c $(MODULE_SRC)/.*.cmd
 	rm -f $(MODULE_SRC)/Module.markers $(MODULE_SRC)/Module.symvers $(MODULE_SRC)/modules.order
 	rm -rf $(MODULE_SRC)/.tmp_versions
