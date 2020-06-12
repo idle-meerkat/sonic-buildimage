@@ -105,39 +105,8 @@ class Eeprom(eeprom_tlvinfo.TlvInfoDecoder):
         except:
             return False
 
-        f = open(EEPROM_STATUS, 'w')
-        f.write("ok")
-        f.close()
-
-        eeprom_params = ""
-        for attr, val in self.eeprom.__dict__.iteritems():
-            if val is None:
-                continue
-
-            elem = eeprom_default_dict.get(attr)
-            if elem is None:
-                continue
-
-            if isinstance(val, basestring):
-                value = val.replace('\0', '')
-            else:
-                value = str(val)
-
-            if attr == "sys_mfg_date":
-                value = datetime.datetime.strptime(value, '%m-%d-%y').strftime('%m/%d/%Y 00:00:00')
-
-            product = product_dict.get(value)
-            if product is not None:
-                value = product
-            if len(eeprom_params) > 0:
-                eeprom_params += ","
-            eeprom_params += "{0:s}={1:s}".format(elem[1], value)
-
-        orig_stdout = sys.stdout
-        sys.stdout = StringIO()
-        new_e = eeprom_tlvinfo.TlvInfoDecoder.set_eeprom(self, "", [eeprom_params])
-        sys.stdout = orig_stdout
-        eeprom_base.EepromDecoder.write_eeprom(self, new_e)
+        with open(EEPROM_STATUS, 'w') as f:
+            f.write("ok")
 
         return True
 
